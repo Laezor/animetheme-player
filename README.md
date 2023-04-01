@@ -1,11 +1,12 @@
 # Table of Contents
 
-- [Introduction](#introduction)
-- [Requirements](#requirements)
-- [Installation](#installation) (wip)
-- [Usage](#usage)
-- [Limitations](#limitations)
-- [Credits](#credits)
+- [Table of Contents](#table-of-contents)
+  - [Introduction](#introduction)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Limitations](#limitations)
+  - [Credits](#credits)
 
 ## Introduction
 
@@ -17,6 +18,22 @@ This is a Python script that lets you search for an anime and play its opening o
 - requests module (can be installed via pip)
 - pyfzf module (can be installed via pip)
 - mpv media player (must be installed separately)
+
+
+## Installation
+
+- For linux
+
+```
+sudo curl -sL https://raw.githubusercontent.com/Laezor/animetheme-player/main/animethemes -o /$HOME/.local/bin/animethemes &&
+sudo chmod +x /$HOME/.local/bin/animethemes
+```
+
+- For windows
+
+```
+iwr "https://raw.githubusercontent.com/Laezor/animetheme-player/main/animethemes-win.py" -OutFile "%userprofile%/Downloads/animethemes-win.py"
+```
 
 ## Usage
 
@@ -39,7 +56,7 @@ animethemes
 4. When prompted, enter the title of the anime you want to search for and whether you want to play its opening or ending theme songs.
 5. Select the anime you want to play theme songs for from the list of search results that appear.
 6. Select the theme song you want to play from the list of available theme songs.
-7. The script will automatically launch the mpv media player and play the selected theme song. Press Ctrl+C to stop playback.
+7. The script will automatically launch the mpv media player and play the selected theme song. Press Q to quit mpv.
 8. After the theme song has finished playing, you will be prompted to choose whether to exit the selection or play another theme song from the current anime.
 9. If you choose to play another theme song, the available theme songs for the current anime will be displayed and you can select another one to play.
 10. If you choose to exit the selection, you will be prompted to choose whether to search for a new anime or exit the script.
