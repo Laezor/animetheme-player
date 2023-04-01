@@ -58,12 +58,13 @@ def play_anime_theme():
     for theme in animethemes:
         if theme["type"] == themetype:
             for entry in theme["animethemeentries"]:
-                for video in entry["videos"]:
-                    available_themes.append({
+                available_themes.extend(
+                    {
                         "title": f"{theme['song']['title']} - {video['filename']}",
-                        "link": video["link"]
-                    })
-
+                        "link": video["link"],
+                    }
+                    for video in entry["videos"]
+                )
     while True:
         # Use fzf.prompt to let the user select a theme song
         selected_theme = fzf.prompt([theme["title"] for theme in available_themes])
@@ -72,25 +73,24 @@ def play_anime_theme():
             # If the user chose to exit, break out of the loop
             break
 
-        # Find the selected theme song's link
-        selected_link = None
-        for theme in available_themes:
-            if theme["title"] == selected_theme[0]:
-                selected_link = theme["link"]
-                break
-
-        # Play the selected theme song
-        if selected_link:
+        if selected_link := next(
+            (
+                theme["link"]
+                for theme in available_themes
+                if theme["title"] == selected_theme[0]
+            ),
+            None,
+        ):
             print(f"Now playing... {selected_theme[0]}")
             subprocess.run(["mpv", selected_link])
         else:
             print("Invalid selection.")
-            
+
         askuser = fzf.prompt(["Play another theme from this anime",
                               "Search for another anime",
                               "Exit"
                               ])
-        
+
         if askuser[0] == "Play another theme from this anime":
             continue
         elif askuser[0] == "Search for another anime":
