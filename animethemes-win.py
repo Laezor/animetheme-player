@@ -1,5 +1,3 @@
-
-
 import requests
 from pyfzf.pyfzf import FzfPrompt
 import subprocess
