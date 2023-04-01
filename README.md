@@ -24,11 +24,42 @@ This is a Python script that lets you search for an anime and play its opening o
 - requests module (can be installed via pip)
 - pyfzf module (can be installed via pip)
 - mpv media player (must be installed separately)
+- install fzf as well (depending on your OS)
 
 
 ## Installation
 
 - For linux
+
+
+## Using git
+
+Alternatively, you can "git clone" this repository to any directory and run
+[install](https://github.com/junegunn/fzf/blob/master/install) script.
+
+```sh
+git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+~/.fzf/install
+```
+
+## Using Linux package managers
+
+| Package Manager | Linux Distribution      | Command                            |
+| ---             | ---                     | ---                                |
+| APK             | Alpine Linux            | `sudo apk add fzf`                 |
+| APT             | Debian 9+/Ubuntu 19.10+ | `sudo apt install fzf`             |
+| Conda           |                         | `conda install -c conda-forge fzf` |
+| DNF             | Fedora                  | `sudo dnf install fzf`             |
+| Nix             | NixOS, etc.             | `nix-env -iA nixpkgs.fzf`          |
+| Pacman          | Arch Linux              | `sudo pacman -S fzf`               |
+| pkg             | FreeBSD                 | `pkg install fzf`                  |
+| pkgin           | NetBSD                  | `pkgin install fzf`                |
+| pkg_add         | OpenBSD                 | `pkg_add fzf`                      |
+| Portage         | Gentoo                  | `emerge --ask app-shells/fzf`      |
+| XBPS            | Void Linux              | `sudo xbps-install -S fzf`         |
+| Zypper          | openSUSE                | `sudo zypper install fzf`          |
+
+- Install the script
 
 ```
 sudo curl -sL https://raw.githubusercontent.com/Laezor/animetheme-player/main/animethemes -o /$HOME/.local/bin/animethemes &&
@@ -36,6 +67,14 @@ sudo chmod +x /$HOME/.local/bin/animethemes
 ```
 
 - For windows
+
+| Package manager | Command              |
+| ---             | ---                  |
+| Chocolatey      | `choco install fzf`  |
+| Scoop           | `scoop install fzf`  |
+| Winget          | `winget install fzf` |
+
+- Install the script
 
 ```
 iwr "https://raw.githubusercontent.com/Laezor/animetheme-player/main/animethemes-win.py" -OutFile "%userprofile%/Downloads/animethemes-win.py"
