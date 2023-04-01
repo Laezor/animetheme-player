@@ -1,0 +1,2 @@
+pyfzf==0.3.1
+requests==2.28.2
