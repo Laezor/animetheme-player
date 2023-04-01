@@ -91,7 +91,7 @@ To use the script, follow these steps:
 For windows
 
 ```python
-python animethemes.py
+python animethemes-win.py
 ```
 For linux
 ```
