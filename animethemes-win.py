@@ -1,5 +1,4 @@
-#!/bin/python
-# -*- coding: utf-8 -*-
+
 
 import requests
 from pyfzf.pyfzf import FzfPrompt
