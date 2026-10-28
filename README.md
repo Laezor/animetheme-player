@@ -77,7 +77,7 @@ sudo chmod +x /$HOME/.local/bin/animethemes
 - Install the script
 
 ```
-iwr "https://raw.githubusercontent.com/Laezor/animetheme-player/main/animethemes-win.py" -OutFile "%userprofile%/Downloads/animethemes-win.py"
+iwr "https://raw.githubusercontent.com/Laezor/animetheme-player/main/animethemes" -OutFile "$env:USERPROFILE\Downloads\animethemes"
 ```
 
 ## Usage
@@ -91,7 +91,7 @@ To use the script, follow these steps:
 For windows
 
 ```python
-python animethemes-win.py
+python animethemes
 ```
 For linux
 ```

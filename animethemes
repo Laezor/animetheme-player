@@ -1,25 +1,46 @@
-#!/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 import shutil
 import subprocess
+import sys
 import time
 
 import requests
 from pyfzf.pyfzf import FzfPrompt
 
 
+def find_vlc():
+    """Find VLC on PATH or in its default Windows install locations."""
+    found = shutil.which("vlc")
+    if found:
+        return found
+
+    candidates = [
+        os.path.join(os.environ.get("ProgramFiles", r"C:\Program Files"), "VideoLAN", "VLC", "vlc.exe"),
+        os.path.join(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"), "VideoLAN", "VLC", "vlc.exe"),
+    ]
+    for path in candidates:
+        if os.path.isfile(path):
+            return path
+    return None
+
+
 def get_player_command(link):
     """Return the command to play `link` with mpv, or vlc if mpv isn't installed."""
-    if shutil.which("mpv"):
-        return ["mpv", link]
-    if shutil.which("vlc"):
-        return ["vlc", "--play-and-exit", link]
+    mpv = shutil.which("mpv")
+    if mpv:
+        return [mpv, link]
+
+    vlc = find_vlc() if sys.platform == "win32" else shutil.which("vlc")
+    if vlc:
+        return [vlc, "--play-and-exit", link]
     return None
 
 
 def fetch_themes(mal_id, retries=3, timeout=20):
-    """Fetch themes from AnimeThemes, retrying on timeouts / 5xx errors."""
+    """Fetch themes from AnimeThemes, retrying on timeouts / 5xx / 4xx errors."""
     url = "https://api.animethemes.moe/anime"
     params = {
         "include": "animethemes.animethemeentries.videos,animethemes.song",
@@ -35,6 +56,9 @@ def fetch_themes(mal_id, retries=3, timeout=20):
             resp = requests.get(url, params=params, headers=headers, timeout=timeout)
             if resp.status_code == 200:
                 return resp.json()
+            if resp.status_code >= 400:
+                print(f"AnimeThemes request failed: HTTP {resp.status_code}")
+                return None
             print(f"Attempt {attempt}/{retries}: HTTP {resp.status_code}")
         except requests.RequestException as e:
             print(f"Attempt {attempt}/{retries}: {e}")
@@ -44,57 +68,70 @@ def fetch_themes(mal_id, retries=3, timeout=20):
     return None
 
 
-def play_anime_theme():
-    fzf = FzfPrompt()
-
+def search_anime(fzf):
+    """Search MyAnimeList and return (mal_id, themetype), or None if cancelled."""
     animetitle = input("Give an anime title: ")
-    themetype = input("Opening or Ending [OP/ED]: ").upper()
+    while True:
+        themetype = input("Opening or Ending [OP/ED]: ").strip().upper()
+        if themetype in ("OP", "ED"):
+            break
+        print("Please enter OP or ED.")
 
     try:
-        res = requests.get(
+        resp = requests.get(
             "https://myanimelist.net/search/prefix.json",
             params={"type": "anime", "keyword": animetitle, "v": 1},
             timeout=20,
-        ).json()
+        )
+        if resp.status_code != 200:
+            print(f"MyAnimeList search failed: HTTP {resp.status_code}")
+            return None
+        res = resp.json()
     except (requests.RequestException, ValueError) as e:
         print(f"MyAnimeList search failed: {e}")
-        return
+        return None
 
     animeinfo = res["categories"][0]["items"]
 
-    animes = {
-        f"{gotanimeid['name']}": str(gotanimeid["id"])
-        for gotanimeid in animeinfo
-        if gotanimeid.get("payload", {}).get("media_type") in ["TV", "OVA"]
-    }
+    animes = {}
+    for item in animeinfo:
+        payload = item.get("payload", {})
+        if payload.get("media_type") not in ("TV", "OVA"):
+            continue
+        year = payload.get("start_year", "?")
+        media = payload.get("media_type")
+        label = f"{item['name']} ({media}, {year}) [{item['id']}]"
+        animes[label] = str(item["id"])
 
     if not animes:
         print("No anime found.")
-        return
+        return None
 
-    selectedtitle = fzf.prompt(animes)
-    if not selectedtitle:
-        return
+    selected = fzf.prompt(animes)
+    if not selected:
+        return None
 
-    selectedid = animes.get(selectedtitle[0])
+    selectedid = animes.get(selected[0])
     if selectedid is None:
         print("Invalid selection.")
-        return
+        return None
 
-    resp = fetch_themes(selectedid)
+    return selectedid, themetype
+
+
+def get_available_themes(mal_id, themetype):
+    """Return matching OP/ED videos for an anime, or None if the API fails."""
+    resp = fetch_themes(mal_id)
     if resp is None:
         print("The AnimeThemes API isn't responding right now. Try again later.")
-        return
+        return None
 
     if not resp["anime"]:
         print("Not found, probably not added yet!")
-        return
+        return None
 
-    animethemes = resp["anime"][0]["animethemes"]
-
-    # Gather all matching theme song titles and links
     available_themes = []
-    for theme in animethemes:
+    for theme in resp["anime"][0]["animethemes"]:
         if theme["type"] == themetype:
             for entry in theme["animethemeentries"]:
                 available_themes.extend(
@@ -105,15 +142,16 @@ def play_anime_theme():
                     for video in entry["videos"]
                 )
 
-    if not available_themes:
-        print(f"No {themetype} themes found.")
-        return
+    return available_themes
 
+
+def select_and_play(fzf, available_themes):
+    """Prompt for a theme, play it, and return 'search', 'exit', or None."""
     while True:
         selected_theme = fzf.prompt([theme["title"] for theme in available_themes])
 
         if not selected_theme:
-            break
+            return None
 
         selected_link = next(
             (
@@ -128,9 +166,9 @@ def play_anime_theme():
             command = get_player_command(selected_link)
             if command is None:
                 print("Neither mpv nor vlc is installed. Please install one of them.")
-                return
+                return None
 
-            print(f"Now playing with {command[0]}... {selected_theme[0]}")
+            print(f"Now playing with {os.path.basename(command[0])}... {selected_theme[0]}")
             subprocess.run(command)
         else:
             print("Invalid selection.")
@@ -144,11 +182,33 @@ def play_anime_theme():
         )
 
         if not askuser or askuser[0] == "Exit":
-            quit()
-        elif askuser[0] == "Search for another anime":
-            play_anime_theme()
-            return
+            return "exit"
+        if askuser[0] == "Search for another anime":
+            return "search"
         # otherwise: "Play another theme from this anime" -> loop again
+
+
+def play_anime_theme():
+    fzf = FzfPrompt()
+
+    while True:
+        result = search_anime(fzf)
+        if result is None:
+            return
+
+        selectedid, themetype = result
+        available_themes = get_available_themes(selectedid, themetype)
+        if available_themes is None:
+            return
+
+        if not available_themes:
+            print(f"No {themetype} themes found.")
+            return
+
+        action = select_and_play(fzf, available_themes)
+        if action == "search":
+            continue
+        return
 
 
 if __name__ == "__main__":
