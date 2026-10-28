@@ -16,14 +16,14 @@
 
 ## Introduction
 
-This is a Python script that lets you search for an anime and play its opening or ending theme songs using the mpv media player. The script uses the AnimeThemes API to get the available theme songs and the pyfzf library to prompt the user for selections.
+This is a Python script that lets you search for an anime and play its opening or ending theme songs using either the mpv media player or VLC media player. The script uses the AnimeThemes API to get the available theme songs and the pyfzf library to prompt the user for selections.
 
 ## Requirements
 
 - Python 3.x
 - requests module (can be installed via pip)
 - pyfzf module (can be installed via pip)
-- mpv media player (must be installed separately)
+- mpv media player or VLC media player (must be installed separately; the script prefers mpv if both are available)
 - install fzf as well (depending on your OS)
 
 
@@ -101,7 +101,7 @@ animethemes
 4. When prompted, enter the title of the anime you want to search for and whether you want to play its opening or ending theme songs.
 5. Select the anime you want to play theme songs for from the list of search results that appear.
 6. Select the theme song you want to play from the list of available theme songs.
-7. The script will automatically launch the mpv media player and play the selected theme song. Press Q to quit mpv.
+7. The script will automatically launch mpv or VLC and play the selected theme song. Press Q to quit the player.
 8. After the theme song has finished playing, you will be prompted to choose whether to exit the selection or play another theme song from the current anime.
 9. If you choose to play another theme song, the available theme songs for the current anime will be displayed and you can select another one to play.
 10. If you choose to exit the selection, you will be prompted to choose whether to search for a new anime or exit the script.
@@ -119,4 +119,4 @@ animethemes
 
 - AnimeThemes for providing the API used by the script.
 - pyfzf for providing the FzfPrompt library used by the script.
-- The creators and contributors of the requests and mpv modules used by the script.
+- The creators and contributors of the requests module, fzf, mpv, and VLC used by the script.
