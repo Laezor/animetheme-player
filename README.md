@@ -11,6 +11,8 @@
   
 ## showcase
 
+![demo gif](assets/demo.gif)
+
 [animethemes_compressed.webm](https://user-images.githubusercontent.com/32393101/229285478-f8077f5d-c109-4423-b1dc-13daef15310c.webm)
 
 
