@@ -5,6 +5,7 @@
   - [Introduction](#introduction)
   - [Requirements](#requirements)
   - [Installation](#installation)
+    - [Python virtual environment](#python-virtual-environment)
   - [Usage](#usage)
   - [Limitations](#limitations)
   - [Credits](#credits)
@@ -23,13 +24,32 @@ This is a Python script that lets you search for an anime and play its opening o
 ## Requirements
 
 - Python 3.x
-- requests module (can be installed via pip)
-- pyfzf module (can be installed via pip)
+- Python packages listed in `requirements.txt` (install inside a virtual environment)
 - mpv media player or VLC media player (must be installed separately; the script prefers mpv if both are available)
 - install fzf as well (depending on your OS)
 
 
 ## Installation
+
+### Python virtual environment
+
+From the project directory, create a virtual environment, activate it, and install the dependencies:
+
+Linux / macOS:
+
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Windows:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
 
 - For linux
 

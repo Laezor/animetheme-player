@@ -56,9 +56,11 @@ def fetch_themes(mal_id, retries=3, timeout=20):
             resp = requests.get(url, params=params, headers=headers, timeout=timeout)
             if resp.status_code == 200:
                 return resp.json()
-            if resp.status_code >= 400:
+            if resp.status_code == 404:
                 print(f"AnimeThemes request failed: HTTP {resp.status_code}")
                 return None
+            elif resp.status_code > 404:
+                print(f"AnimeThemes request failed: HTTP {resp.status_code} - {resp.text}")
             print(f"Attempt {attempt}/{retries}: HTTP {resp.status_code}")
         except requests.RequestException as e:
             print(f"Attempt {attempt}/{retries}: {e}")
@@ -91,17 +93,30 @@ def search_anime(fzf):
         print(f"MyAnimeList search failed: {e}")
         return None
 
-    animeinfo = res["categories"][0]["items"]
+    categories = res.get("categories") or []
+    if not categories:
+        print("MyAnimeList search returned no results.")
+        return None
+
+    first_category = categories[0] if isinstance(categories[0], dict) else {}
+    animeinfo = first_category.get("items") or []
+    if not animeinfo:
+        print("MyAnimeList search returned no results.")
+        return None
 
     animes = {}
     for item in animeinfo:
-        payload = item.get("payload", {})
+        payload = item.get("payload") or {}
+        mal_id = item.get("id")
+        name = item.get("name")
+        if mal_id is None or not name:
+            continue
         if payload.get("media_type") not in ("TV", "OVA"):
             continue
         year = payload.get("start_year", "?")
         media = payload.get("media_type")
-        label = f"{item['name']} ({media}, {year}) [{item['id']}]"
-        animes[label] = str(item["id"])
+        label = f"{name} ({media}, {year}) [{mal_id}]"
+        animes[label] = str(mal_id)
 
     if not animes:
         print("No anime found.")
@@ -126,20 +141,32 @@ def get_available_themes(mal_id, themetype):
         print("The AnimeThemes API isn't responding right now. Try again later.")
         return None
 
-    if not resp["anime"]:
+    anime_list = resp.get("anime") or []
+    if not anime_list:
         print("Not found, probably not added yet!")
         return None
 
+    first_anime = anime_list[0] if isinstance(anime_list[0], dict) else {}
     available_themes = []
-    for theme in resp["anime"][0]["animethemes"]:
-        if theme["type"] == themetype:
-            for entry in theme["animethemeentries"]:
-                available_themes.extend(
+    for theme in first_anime.get("animethemes") or []:
+        if theme.get("type") != themetype:
+            continue
+        song = theme.get("song") or {}
+        song_title = song.get("title")
+        if not song_title:
+            print("Skipping a theme with missing song data.")
+            continue
+        for entry in theme.get("animethemeentries") or []:
+            for video in entry.get("videos") or []:
+                link = video.get("link")
+                if not link:
+                    continue
+                filename = video.get("filename") or "unknown"
+                available_themes.append(
                     {
-                        "title": f"{theme['song']['title']} - {video['filename']}",
-                        "link": video["link"],
+                        "title": f"{song_title} - {filename}",
+                        "link": link,
                     }
-                    for video in entry["videos"]
                 )
 
     return available_themes
@@ -194,16 +221,14 @@ def play_anime_theme():
     while True:
         result = search_anime(fzf)
         if result is None:
-            return
+            continue
 
         selectedid, themetype = result
         available_themes = get_available_themes(selectedid, themetype)
-        if available_themes is None:
-            return
-
         if not available_themes:
-            print(f"No {themetype} themes found.")
-            return
+            if available_themes is not None:
+                print(f"No {themetype} themes found.")
+            continue
 
         action = select_and_play(fzf, available_themes)
         if action == "search":
