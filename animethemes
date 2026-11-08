@@ -39,8 +39,8 @@ def get_player_command(link):
     return None
 
 
-def fetch_themes(mal_id, retries=3, timeout=20):
-    """Fetch themes from AnimeThemes, retrying on timeouts / 5xx / 4xx errors."""
+def fetch_themes(mal_id, retries=5, timeout=20):
+    """Fetch themes from AnimeThemes, retrying only on transient errors."""
     url = "https://api.animethemes.moe/anime"
     params = {
         "include": "animethemes.animethemeentries.videos,animethemes.song",
@@ -50,22 +50,24 @@ def fetch_themes(mal_id, retries=3, timeout=20):
         "filter[external_id]": mal_id,
     }
     headers = {"User-Agent": "animetheme-player/1.0"}
+    retryable = {429, 500, 502, 503, 504}
 
     for attempt in range(1, retries + 1):
         try:
             resp = requests.get(url, params=params, headers=headers, timeout=timeout)
             if resp.status_code == 200:
                 return resp.json()
-            if resp.status_code == 404:
+            if resp.status_code not in retryable:
                 print(f"AnimeThemes request failed: HTTP {resp.status_code}")
-                return None
-            elif resp.status_code > 404:
-                print(f"AnimeThemes request failed: HTTP {resp.status_code} - {resp.text}")
+                return None  # 404, 400, 403... retrying won't help
             print(f"Attempt {attempt}/{retries}: HTTP {resp.status_code}")
+            retry_after = resp.headers.get("Retry-After")
+            delay = int(retry_after) if retry_after and retry_after.isdigit() else 2 ** attempt
         except requests.RequestException as e:
             print(f"Attempt {attempt}/{retries}: {e}")
+            delay = 2 ** attempt
         if attempt < retries:
-            time.sleep(2 * attempt)
+            time.sleep(min(delay, 30))
 
     return None
 
