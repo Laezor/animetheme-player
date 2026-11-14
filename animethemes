@@ -10,6 +10,10 @@ import time
 import requests
 from pyfzf.pyfzf import FzfPrompt
 
+# Simple rate limiter to avoid hitting API too frequently
+_last_api_request = 0
+_MIN_REQUEST_INTERVAL = 1.0  # seconds between requests
+
 
 def find_vlc():
     """Find VLC on PATH or in its default Windows install locations."""
@@ -49,8 +53,19 @@ def fetch_themes(mal_id, retries=3, timeout=20):
         "filter[site]": "myanimelist",
         "filter[external_id]": mal_id,
     }
-    headers = {"User-Agent": "animetheme-player/1.0"}
+    # Improved User-Agent with contact info per API best practices
+    headers = {
+        "User-Agent": "animetheme-player/1.0 (https://github.com/Laezor/animetheme-player; laezor@example.com)",
+        "Accept": "application/json",
+    }
     retryable = {429, 500, 502, 503, 504}
+
+    # Rate limiting: ensure minimum interval between requests
+    global _last_api_request
+    elapsed = time.time() - _last_api_request
+    if elapsed < _MIN_REQUEST_INTERVAL:
+        time.sleep(_MIN_REQUEST_INTERVAL - elapsed)
+    _last_api_request = time.time()
 
     for attempt in range(1, retries + 1):
         try:
@@ -59,6 +74,10 @@ def fetch_themes(mal_id, retries=3, timeout=20):
                 return resp.json()
             if resp.status_code not in retryable:
                 print(f"AnimeThemes request failed: HTTP {resp.status_code}")
+                if resp.status_code == 503:
+                    print("The AnimeThemes API is temporarily unavailable (503).")
+                    print("This is usually a temporary server issue. Please try again later.")
+                    print("You can check the API status at: https://animethemes.moe")
                 return None  # 404, 400, 403... retrying won't help
             print(f"Attempt {attempt}/{retries}: HTTP {resp.status_code}")
             retry_after = resp.headers.get("Retry-After")
@@ -69,6 +88,8 @@ def fetch_themes(mal_id, retries=3, timeout=20):
         if attempt < retries:
             time.sleep(min(delay, 30))
 
+    print(f"All {retries} attempts failed. The AnimeThemes API may be down.")
+    print("Try again later or check https://animethemes.moe for status updates.")
     return None
 
 
